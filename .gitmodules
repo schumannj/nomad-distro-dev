@@ -1,3 +1,15 @@
 [submodule "packages/nomad-FAIR"]
 	path = packages/nomad-FAIR
 	url = https://gitlab.mpcdf.mpg.de/nomad-lab/nomad-FAIR.git
+[submodule "packages/nomad-catalysis-plugin"]
+	path = packages/nomad-catalysis-plugin
+	url = https://github.com/FAIRmat-NFDI/nomad-catalysis-plugin
+[submodule "packages/nomad-parser-plugins-electronic"]
+	path = packages/nomad-parser-plugins-electronic
+	url = https://github.com/nomad-coe/electronic-parsers.git
+[submodule "packages/nomad-measurements"]
+	path = packages/nomad-measurements
+	url = https://github.com/FAIRmat-NFDI/nomad-measurements.git
+[submodule "packages/nomad-material-processing"]
+	path = packages/nomad-material-processing
+	url = https://github.com/FAIRmat-NFDI/nomad-material-processing.git

@@ -1,350 +1,267 @@
-Start by forking main repository (/FAIRmat-NFDI/nomad-distro-dev) that will house all your plugins.
+![docker image](https://github.com/FAIRmat-NFDI/nomad-distro-template/actions/workflows/docker-publish.yml/badge.svg)
 
-# NOMAD Dev Distribution
+# NOMAD Oasis Distribution *Template*
+This repository is a template for creating your own custom NOMAD Oasis distribution image.
+Click [here](https://github.com/new?template_name=nomad-distro-template&template_owner=FAIRmat-NFDI)
+to use this template, or click the `Use this template` button in the upper right corner of
+the main GitHub page for this template.
 
-Benefits
+> [!IMPORTANT] 
+> The templated repository will run a GitHub action on creation which might take a few minutes.
+> After the workflow finishes you should refresh the page and this message should disappear.
+> If this message persists you might need to trigger the workflow manually by navigating to the
+> "Actions" tab at the top, clicking "Template Repository Initialization" on the left side,
+> and triggering it by clicking "Run workflow" under the "Run workflow" button on the right.
 
-- One-step installations: Install everything at once with editable mode. Since all packages are installed in editable mode,
-  changes you make to the code are immediately reflected. Edit your code and rerun tests or the application as needed,
-  without needing to reinstall the packages.
-- Centralized codebase: Easier navigation and searching across projects.
-- Better editor support: Improved autocompletion and refactoring.
-- Consistent tooling: Shared linting, testing, and formatting.
-- Flexible plugin management: If you're developing plugins for different deployments
-  with varying requirements, you can easily create different branches for each deployment
-  and configure which plugins to use in the specific branch for that deployment.
+# FAIRmat-NFDI's NOMAD Oasis Distribution
 
-Below are instructions for how to create a dev environment for developing [nomad-lab](https://gitlab.mpcdf.mpg.de/nomad-lab) and its plugins.
+This is the NOMAD Oasis distribution of FAIRmat-NFDI.
+Below are instructions for how to [deploy this distribution](#deploying-the-distribution)
+and how to customize it through [adding plugins](#adding-a-plugin).
 
-## Basic infra
+> [!IMPORTANT]
+> Depending on the settings of the owner of this repository, the distributed image might
+> be private and require authentication to pull.
+> If you want to keep the image private you need to configure and use a personal access
+> token (PAT) according to the instructions in the GitHub docs [here](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-with-a-personal-access-token-classic).
+> If you want to make the image public (recommended), you should make sure that your
+> organization settings allow public packages and make this package public after building it.
+> You can read more about this in the GitHub docs [here](https://docs.github.com/en/packages/learn-github-packages/configuring-a-packages-access-control-and-visibility).
 
-1. Ensure you have [docker](https://docs.docker.com/engine/install/) installed.
+> [!TIP]
+> In order for others to find and learn from your distribution we in FAIRmat would
+> greatly appreciate it if you would add the topic `nomad-distribution` by clicking the
+> ⚙️ next to "About" on the main GitHub page for this repository.
+
+In this README you will find instructions for:
+1. [Deploying the distribution](#deploying-the-distribution)
+2. [Adding a plugin](#adding-a-plugin)
+3. [Using the jupyter image](#the-jupyter-image)
+4. [Automated unit and example upload tests in CI](#automated-unit-and-example-upload-tests-in-ci)
+5. [Setup regular package updates with Dependabot](#set-up-regular-package-updates-with-dependabot)
+6. [Updating the distribution from the template](#updating-the-distribution-from-the-template)
+7. [Solving common issues](#faqtrouble-shooting)
+
+## Deploying the distribution
+
+Below are instructions for how to deploy this NOMAD Oasis distribution
+[for a new Oasis](#for-a-new-oasis) and [for an existing Oasis](#for-an-existing-oasis)
+
+### For a new Oasis
+
+1. Make sure you have [docker](https://docs.docker.com/engine/install/) installed.
    Docker nowadays comes with `docker compose` built in. Prior, you needed to
    install the stand-alone [docker-compose](https://docs.docker.com/compose/install/).
 
-2. Install [uv](https://docs.astral.sh/uv/getting-started/installation/) (v0.5.14 and above).
-   uv is required to manage your development environment. It's recommended to use the standalone installer or perform a global installation.
-   (`brew install uv` on macOS or `dnf install uv` on Fedora).
-
-
-3. Install [node.js](https://nodejs.org/en) (v20) and [yarn](https://classic.yarnpkg.com/en/docs/install/)(v1.22). We will use it to setup the GUI.
-
-4. For Windows users, nomad-lab processing doesn't work natively on the platform. We highly recommend using the [Devcontainer](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) 
-plugin in VSCode to run the repository within a container, or alternatively, using [GitHub Codespaces](https://github.com/features/codespaces) to run the project.
-
-5. Clone the forked repository.
-
-   ```bash
-   git clone https://github.com/<your-username>/nomad-distro-dev.git
-   cd nomad-distro-dev
-   ```
-
-6. Run the docker containers with docker compose in
-   [detached](https://docs.docker.com/guides/language/golang/run-containers/#run-in-detached-mode)
-   (--detach or -d) mode.
-
-   ```sh
-   docker compose up -d
-   ```
-
-   To shutdown the containers:
-
-   ```sh
-   docker compose down
-   ```
-
-## Developing nomad + plugins locally.
-
-This guide explains how to set up a streamlined development environment for nomad-lab and its plugins using
-[`uv` workspaces](https://docs.astral.sh/uv/concepts/workspaces/#workspaces).
-This approach eliminates the need for multiple pip install commands by leveraging a monorepo and a single installation step.
-
-In this example, we'll set up the development environment for a developer working
-on the following plugins: `nomad-parser-plugins-electronic` and
-`nomad-measurements`. The first plugin already comes as a dependency
-in this dev distribution. On the contrary, the second plugin is not listed as a
-dependency. In the following, we take a look at how to setup the environment in
-these two situations.
-
-### Step-by-Step Setup
-
-1. Update submodules
-
-   This loads the `nomad-lab` package which is already listed as a submodule.
-
-   ```bash
-   git submodule update --init --recursive
-   ```
-
-
-2. Add local plugins
-
-   Assuming that you already have a git repo for your plugins, add them to the
-   `packages/` directory as submodules. In case, you are looking to create a plugin
-   repo from scratch, consider using our plugin template:
-   [nomad-plugin-template](https://github.com/FAIRmat-NFDI/nomad-plugin-template).
-
-   ```bash
-   git submodule add https://github.com/<package_name>.git packages/<package_name>
-   ```
-
-   Repeat for all the plugin packages you want to add and develop. For our example:
-
-   ```bash
-   git submodule add https://github.com/nomad-coe/electronic-parsers.git packages/nomad-parser-plugins-electronic
-
-   git submodule add https://github.com/FAIRmat-NFDI/nomad-measurements.git packages/nomad-measurements
-   ```
-
-3. Modify `pyproject.toml`
-
-   To ensure `uv` recognizes the
-   local plugins (a local copy of your plugin repository available in `packages/` directory),
-   we need to make some modifications in the `pyproject.toml`.
-   These include adding the plugin package to `[project.dependencies]` and
-   `[tool.uv.sources]` tables.
-   The packages listed under `[tool.uv.sources]` are loaded by `uv` using the local code
-   directory made available under `packages/` with the previous
-   step. This list will contain all the plugins that we need to actively develop in this environment.
-
-   If a new plugin is **not** listed under `[project.dependencies]`, we need
-   to first add it as a dependency. After adding the dependencies, update the
-   `[tool.uv.sources]` section in your `pyproject.toml` file to reflect the new
-   plugins.
-
-   There are two ways of adding to these two lists:
-
-   * You can use `uv add` which adds the dependency and the source in `pyproject.toml`
-   and sets up the environment:
-
-     ```bash
-     uv add packages/nomad-measurements
-     ```
-
-   Or if you've added multiple plugins as submodules, you should list them all together.
-
-   ```bash
-   uv add packages/nomad-measurements packages/PLUGIN_B packages/PLUGIN_C
-   ```
- 
-   * You can modify the `pyproject.toml` file manually:
-
-     ```toml
-     [project]
-     dependencies = [
-     ...
-     "nomad-measurements",
-     ]
-  
-     [tool.uv.sources]
-     ...
-     nomad-measurements = { workspace = true }
-     ```  
-   
-   Some of the plugins are already listed under
-   `[project.dependencies]`. If you want to develop one of them, you
-   have to add them under `[tool.uv.sources]`. We do this for `nomad-parser-plugins-electronics`.
-  
-   ```toml
-   [tool.uv.sources]
-   ...
-   nomad-parser-plugins-electronic = { workspace = true }
-   ```
-
- > [!NOTE]
- > You can also use `uv` to install a specific branch of the plugin without adding a submodule locally.
- >
- > ```bash
- > uv add https://github.com/FAIRmat-NFDI/nomad-measurements.git --branch <specific-branch-name>
- > ```
- > This command will not include the plugin in the `packages/` folder, and hence this plugin
- > will not be editable. 
-
-A complete list of plugins maintained by FAIRmat-NFDI can by found in the [overview page](https://github.com/FAIRmat-NFDI) of the FAIRmat-NFDI organisation.
-
-    
-### Day-to-Day Development
-
-After the initial setup, here’s how to manage your daily development tasks.
-
-1. Update the environment (This step updates the submodules and installs the necessary dependencies):
-
-   ```bash
-   uv run poe setup
-   ```
-
-   As part of the setup command, a `nomad.yaml` config file will be created, this file is used to configure nomad. 
-   It will be placed in the top-level directory of your repository, where all commands are executed from.
-
-   For more information on configuration options, refer to the detailed [nomad configuration docs](https://nomad-lab.eu/prod/v1/staging/docs/reference/config.html#setting-values-from-a-nomadyaml).
-
-
-> [!NOTE]
->
-> `uv sync` and `uv run` automatically manages the virtual environment for you.
-> There's no need to manually create or activate a venv.
-> Any `uv run` commands will automatically use the correct environment by default.
-> Read more about `uv` commands to manage the dependencies [here](https://docs.astral.sh/uv/concepts/projects/#managing-dependencies).
-
-2. Running `nomad` api app (equivalent to running `uv run nomad admin run appworker`).
-
-   ```bash
-   uv run poe start
-   ```
-
-3. Start NOMAD GUI
-
-   ```bash
-   uv run poe gui start
-   ```
-
-> [!TIP]
->
-> `uv run poe gui` maps to `yarn run`, so here you can replace `start` with commands like `test`, `build`, etc.
-
-4. Run the docs server (optional: only if you wish to run the documentation server):
-
-   ```bash
-   uv run poe docs
-   ```
-
-5. Running tests
-
-   To run tests across the project, use the uv run command to execute pytest in the relevant directory. For instance:
-
-   ```bash
-   uv run --directory packages/package_name pytest
-   ```
-
-   This allows you to run tests for a specific parser or package. For running tests across all packages, simply repeat the command for each directory.
-
-> [!TIP]
->
-> To run tests for a specific package in an isolated venv use: `uv run --exact --all-extras --package plugin_a --directory packages/plugin_a pytest`
-
-6. Linting & code formatting
-
-   To check for linting issues using ruff, run the following command:
-
-   ```bash
-   uv run poe lint
-   ```
-
-   You can invoke ruff separately using `uv run ruff` too.
-
-7. Adding new plugins
-
-   To add a new package, follow [setup guide](#step-by-step-setup) and add it into the `packages/` directory and ensure it's listed in `pyproject.toml` under `[tool.uv.sources]`. Then, install it by running:
-
-   ```bash
-   uv sync
-   ```
-
-8. Removing an existing plugin
-
-   To remove an existing plugin from the workspace in `packages/` directory, do the following and commit:
-
-   ```bash
-   git rm <path-to-submodule>
-   ```
-
-   Then you can remove the plugin from `[tool.uv.sources]` in `pyproject.toml` to
-   stop uv from using the local plugin repository.
-
-   Additionally, if you want to remove the plugin from being a dependency of your
-   NOMAD installation, you can use `uv` to entirely remove it:
-
-   ```bash
-   uv remove <plugin-name>
-   ```
-
-9. Modifying dependencies in packages.
-
-   ```bash
-   uv add --package <PACKAGE_NAME> <DEPENDENCY_NAME>
-   ```
-
-   For example:
-
-   ```bash
-   uv add --package nomad-measurements "pandas>=2.0"
-   uv remove --package nomad-lab numpy
-   ```
-
-10. Generating gui test artifacts and nomad requirements files
-
-    ```bash
-    uv run poe gen-gui-test-artifacts
-    uv run poe gen-nomad-lock
+2. Clone the repository or download the repository as a zip file.
+
+    ```sh
+    git clone https://github.com/FAIRmat-NFDI/nomad-distro-template.git
+    cd nomad-distro-template
     ```
 
-11. Keeping Up-to-Date
+    or
 
-    To pull updates from the main repository and submodules, run:
-
-    ```bash
-    git pull --recurse-submodules
+    ```sh
+    curl-L -o nomad-distro-template.zip "https://github.com/FAIRmat-NFDI/nomad-distro-template/archive/main.zip"
+    unzip nomad-distro-template.zip
+    cd nomad-distro-template
     ```
 
-    Afterward, sync your environment:
+3. _On Linux only,_ recursively change the owner of the `.volumes` directory to the nomad user (1000)
 
-    ```bash
-    uv sync
+    ```sh
+    sudo chown -R 1000 .volumes
     ```
 
-### Updating the fork
+4. Pull the images specified in the `docker-compose.yaml`
 
-To keep your fork up to date with the latest changes from the original repository (upstream), follow these steps:
+    Note that the image needs to be public or you need to provide a PAT (see "Important" note above).
 
-1. Add the upstream Remote
+    ```sh
+    docker compose pull
+    ```
 
-   If you haven't already, add the original repository as upstream:
+5. And run it with docker compose in detached (--detach or -d) mode
 
-   ```bash
-   git remote add upstream https://github.com/FAIRmat-NFDI/nomad-distro-dev.git
-   ```
+    ```sh
+    docker compose up -d
+    ```
 
-2. Fetch the Latest Changes from upstream
+6. Optionally you can now test that NOMAD is running with
 
-   Fetch the latest commits from the upstream repository:
+    ```
+    curl localhost/nomad-oasis/alive
+    ```
 
-   ```bash
-   git fetch upstream
-   ```
+7. Finally, open [http://localhost/nomad-oasis](http://localhost/nomad-oasis) in your browser to start using your new NOMAD Oasis.
 
-3. Merge upstream/main into Your Local Branch
-
-   Switch to the local branch (e.g., main) you want to update, and merge the changes from upstream/main:
-
-   ```bash
-   git checkout main
-   git merge upstream/main
-   ```
-
-   Resolve any merge conflicts if necessary, and commit the merge.
-
-4. Push the Updates to Your Fork
-
-   After merging, push the updated branch to your fork on GitHub:
-
-   ```bash
-   git push origin main
-   ```
-
-### Common Issues and Solutions
-
-1. Failed to install phonopy.
-
-   ```console
-      uv venv -p 3.12
-      uv pip install 'numpy>=1.25'
-      uv pip install 'phonopy==2.11.0' --no-build-isolation
-   ```
-
-2. Failed to install pycifrw.
+#### Updating the image
+Any pushes to the main branch of this repository, such as when [adding a plugin](#adding-a-plugin), will trigger a pipeline that generates a new app and jupyter image.
    
-   The error usually indicates that clang was missing. `error: command 'clang'`. Installing `clang` should fix this issue.
+1. To update your local image you need to shut down NOMAD using
+
+    ```sh
+    docker compose down
+    ```
+
+    and then repeat steps 4. and 5. above.
    
+2. You can remove unused images to free up space by running
 
+    ```sh
+    docker image prune -a
+    ```
 
+#### NOMAD Remote Tools Hub (NORTH)
 
+To run NORTH (the NOMAD Remote Tools Hub), the `hub` container needs to run docker and
+the container has to be run under the docker group. You need to replace the default group
+id `991` in the `docker-compose.yaml`'s `hub` section with your systems docker group id.
+Run `id` if you are a docker user, or `getent group | grep docker` to find your
+systems docker gid. The user id 1000 is used as the nomad user inside all containers.
+
+Please see the [Jupyter image](#the-jupyter-image) section below for more information on the jupyter NORTH image being generated in this repository.
+
+You can find more details on setting up and maintaining an Oasis in the NOMAD docs here:
+[nomad-lab.eu/prod/v1/docs/oasis/install.html](https://nomad-lab.eu/prod/v1/docs/oasis/install.html)
+
+### For an existing Oasis
+
+If you already have an Oasis running you only need to change the image being pulled in
+your `docker-compose.yaml` with `ghcr.io/fairmat-nfdi/nomad-distro-template:main` for the services
+`worker`, `app`, `north`, and `logtransfer`.
+
+If you want to use the `nomad.yaml` from this repository you also need to comment out
+the inclusion of the `nomad.yaml` under the volumes key of those services in the
+`docker-compose.yaml`.
+
+```yaml
+volumes:
+  # - ./configs/nomad.yaml:/app/nomad.yaml
+```
+
+To run the new image you can follow steps 5. and 6. [above](#for-a-new-oasis).
+
+## Adding a plugin
+
+To add a new plugin to the docker image you should add it to the plugins table in the [`pyproject.toml`](pyproject.toml) file.
+
+Here you can put either plugins distributed to PyPI, e.g.
+
+```toml
+[project.optional-dependencies]
+plugins = [
+  "nomad-material-processing>=1.0.0",
+]
+```
+
+or plugins in a git repository with either the commit hash
+
+```toml
+[project.optional-dependencies]
+plugins = [
+  "nomad-measurements @ git+https://github.com/FAIRmat-NFDI/nomad-measurements.git@71b7e8c9bb376ce9e8610aba9a20be0b5bce6775",
+]
+```
+
+or with a tag
+
+```toml
+[project.optional-dependencies]
+plugins = [
+  "nomad-measurements @ git+https://github.com/FAIRmat-NFDI/nomad-measurements.git@v0.0.4"
+]
+```
+
+To add a plugin in a subdirectory of a git repository you can use the `subdirectory` option, e.g.
+
+```toml
+[project.optional-dependencies]
+plugins = [
+  "ikz_pld_plugin @ git+https://github.com/FAIRmat-NFDI/AreaA-data_modeling_and_schemas.git@30fc90843428d1b36a1d222874803abae8b1cb42#subdirectory=PVD/PLD/jeremy_ikz/ikz_pld_plugin"
+]
+```
+
+Once the changes have been committed to the main branch, the new image will automatically
+be generated.
+
+## The Jupyter image
+
+In addition to the Docker image for running the oasis, this repository also builds a custom NORTH image for running a jupyter hub with the installed plugins.
+This image has been added to the [`configs/nomad.yaml`](configs/nomad.yaml) during the initialization of this repository and should therefore already be available in your Oasis under "Analyze / NOMAD Remote Tools Hub / jupyter"
+
+The image is quite large and might cause a timeout the first time it is run. In order to avoid this you can pre pull the image with:
+
+```
+docker pull ghcr.io/fairmat-nfdi/nomad-distro-template/jupyter:main
+```
+
+If you want additional python packages to be available to all users in the jupyter hub you can add those to the jupyter table in the [`pyproject.toml`](pyproject.toml):
+
+```toml
+[project.optional-dependencies]
+jupyter = [
+  "voila",
+  "ipyaggrid",
+  "ipysheet",
+  "ipydatagrid",
+  "jupyter-flex",
+]
+```
+
+## Automated Unit and Example Upload Tests in CI
+
+By default, all unit tests from every plugin are executed to ensure system stability and catch potential issues early. These tests validate core functionality and help maintain consistency across different plugins.
+
+In addition to unit tests, the pipeline also verifies that all example uploads can be processed correctly. This ensures that any generated entries do not contain error messages, providing confidence that data flows through the system as expected.
+
+For example upload tests, the CI uses the image built in the Build Image step. It then runs the Docker container and starts up the application to confirm that it functions correctly. This approach ensures that if the pipeline passes, the app is more likely to run smoothly in a Dockerized environment on a server, not just locally.
+
+If you need to disable tests for specific plugins, update the **PLUGIN_TESTS_PLUGINS_TO_SKIP** variable in [.github/workflows/docker-publish.yml](./.github/workflows/docker-publish.yml#L19) by adding the plugin names to the existing list.
+
+## Set Up Regular Package Updates with Dependabot
+
+Dependabot is already configured in the repository’s CI setup, but you need to enable it manually in the repository settings.
+
+To enable Dependabot, go to Settings > Code security and analysis in your GitHub repository. From there, turn on Dependabot alerts and version updates. Once enabled, Dependabot will automatically check for dependency updates and create pull requests when new versions are available.
+
+This automated process helps ensure that your dependencies stay up to date, improving security and reducing the risk of vulnerabilities.
+
+## Updating the distribution from the template
+
+In order to update an existing distribution with any potential changes in the template you can add a new `git remote` for the template and merge with that one while allowing for unrelated histories:
+
+```
+git remote add template https://github.com/FAIRmat-NFDI/nomad-distro-template
+git fetch template
+git merge template/main --allow-unrelated-histories
+```
+
+Most likely this will result in some merge conflicts which will need to be resolved. At the very least the `Dockerfile` and GitHub workflows should be taken from "theirs":
+
+```
+git checkout --theirs Dockerfile
+git checkout --theirs .github/workflows/docker-publish.yml
+```
+
+For detailed instructions on how to resolve the merge conflicts between different version we refer you to the latest template release [notes](https://github.com/FAIRmat-NFDI/nomad-distro-template/releases/latest)
+
+Once the merge conflicts are resolved you should add the changes and commit them
+
+```
+git add -A
+git commit -m "Updated to new distribution version"
+```
+
+Ideally all workflows should be triggered automatically but you might need to run the initialization one manually by navigating to the "Actions" tab at the top, clicking "Template Repository Initialization" on the left side, and triggering it by clicking "Run workflow" under the "Run workflow" button on the right.
+
+## FAQ/Trouble shooting
+
+_I get an_ `Error response from daemon: Head "https://ghcr.io/v2/FAIRmat-NFDI/nomad-distro-template/manifests/main": unauthorized`
+_when trying to pull my docker image._
+
+Most likely you have not made the package public or provided a personal access token (PAT).
+You can read how to make your package public in the GitHub docs [here](https://docs.github.com/en/packages/learn-github-packages/configuring-a-packages-access-control-and-visibility)
+or how to configure a PAT (if you want to keep the distribution private) in the GitHub
+docs [here](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-with-a-personal-access-token-classic).
